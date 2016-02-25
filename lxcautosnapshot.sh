@@ -44,6 +44,7 @@ WEEKLY_BACKUP_DAY=6
 #Check date
 
 ## Generate list of container to snapshot
+## Snapshot DIR
 SNAPSHOT=()
 for container in $(ls ${LXCPATH}); do
 	skip=
@@ -73,7 +74,7 @@ week_day=`date +"%u"`
     RETENTION_DAY_LOOKUP=$RETENTION_WEEK
     else
     # On any regular day do
-      BACKUP_TYPE=''
+      BACKUP_TYPE='-daly'
       RETENTION_DAY_LOOKUP=$RETENTION_DAY
     fi
   fi
@@ -123,14 +124,47 @@ function validate(){
 	fi
 }
 
-function backup(){
-	#stopLXC
-	
+function snapshot(){
 	echo "Processing snapshots..."
 	for i in ${SNAPSHOT[@]}; do
-		lxc-snapshot -n $container
+		echo "Snapshot $i"
+		lxc-snapshot -n $i
 	done
-
 }
 
-backup
+#renaming Snapshots
+function rename(){
+        echo "Rename snapshot..."
+        for c in ${SNAPSHOT[@]}; do
+                dir=$LXCPATH/$c/snaps
+                list=($(ls ${dir}/ | grep ${BACKUP_TYPE} | sort -r))
+                if [[ -d $dir/${BACKUP_TYPE}0 ]] && [[ -d $dir/snap0 ]]; then
+                        i=${#list[@]}
+                        for rename in ${list[@]}; do
+                                echo "RENAME: $rename to ${BACKUP_TYPE}${i}"
+                                mv $dir/$rename $dir/${BACKUP_TYPE}${i}
+                                let i--
+                        done
+                        mv $dir/snap0 $dir/${BACKUP_TYPE}0
+                else 
+                        if [[ -d $dir/snap0 ]]; then
+                                echo "RENAME: snap0 to ${BACKUP_TYPE}0"
+                                mv $dir/snap0 $dir/${BACKUP_TYPE}0
+                        else
+                                echo "Nothing to rename!"
+                        fi
+                fi
+        done
+}
+
+if [[ -d $name ]] ; then
+    i=0
+    while [[ -e $name-$i.ext ]] ; do
+        let i++
+    done
+    name=$name-$i
+fi
+
+stopLXC
+snapshot
+startLXC
