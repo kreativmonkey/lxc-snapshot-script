@@ -64,17 +64,17 @@ week_day=`date +"%u"`
 
 # On first month day do
   if [ "$month_day" -eq $MONTHLY_BACKUP_DATE ] ; then
-    BACKUP_TYPE='-monthly'
+    BACKUP_TYPE='monthly'
     RETENTION_DAY_LOOKUP=$RETENTION_MONTH
   else
   # On saturdays do
     if [ "$week_day" -eq $WEEKLY_BACKUP_DAY ] ; then
     # weekly - keep for RETENTION_WEEK
-    BACKUP_TYPE='-weekly'
+    BACKUP_TYPE='weekly'
     RETENTION_DAY_LOOKUP=$RETENTION_WEEK
     else
     # On any regular day do
-      BACKUP_TYPE='-daly'
+      BACKUP_TYPE='daly'
       RETENTION_DAY_LOOKUP=$RETENTION_DAY
     fi
   fi
@@ -138,18 +138,19 @@ function rename(){
         for c in ${SNAPSHOT[@]}; do
                 dir=$LXCPATH/$c/snaps
                 list=($(ls ${dir}/ | grep ${BACKUP_TYPE} | sort -r))
-                if [[ -d $dir/${BACKUP_TYPE}0 ]] && [[ -d $dir/snap0 ]]; then
+                if [[ -d $dir/${BACKUP_TYPE}-0 ]] && [[ -d $dir/snap0 ]]; then
                         i=${#list[@]}
                         for rename in ${list[@]}; do
-                                echo "RENAME: $rename to ${BACKUP_TYPE}${i}"
-                                mv $dir/$rename $dir/${BACKUP_TYPE}${i}
+                                echo "RENAME: $rename to ${BACKUP_TYPE}-${i}"
+                                mv $dir/$rename $dir/${BACKUP_TYPE}-${i}
                                 let i--
                         done
-                        mv $dir/snap0 $dir/${BACKUP_TYPE}0
+			echo "RENAME: snap0 to ${BACKUP_TYPE}-0"
+                        mv $dir/snap0 $dir/${BACKUP_TYPE}-0
                 else 
                         if [[ -d $dir/snap0 ]]; then
-                                echo "RENAME: snap0 to ${BACKUP_TYPE}0"
-                                mv $dir/snap0 $dir/${BACKUP_TYPE}0
+                                echo "RENAME: snap0 to ${BACKUP_TYPE}-0"
+                                mv $dir/snap0 $dir/${BACKUP_TYPE}-0
                         else
                                 echo "Nothing to rename!"
                         fi
